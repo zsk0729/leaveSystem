@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace目前可以自定义要唯一，将来面向接口编程时对应dao接口，
+一 个mapper相当于一个dao接口的实现类 -->
+<mapper namespace="com.jxd.dao.ILeaveSysDao">
+
+    <!--判断用户名或密码是否正确 UserLogin isLogin(String uname, String pwd, String role);-->
+    <select id="isLogin" resultType="UserLogin">
+        select * from userlogin where userid = #{userid} and pwd = #{pwd} and role = #{role}
+    </select>
+    <select id="isLogin2" resultType="UserLogin">
+        select * from userlogin where userid = #{userid} and pwd = #{pwd} and role = #{role}
+    </select>
+
+    <!--获取所有班级信息 List<Grade> getAllGrade();-->
+    <select id="getAllGrade" resultType="Grade">
+        select * from grade;
+    </select>
+
+    <!--获取该学生的所有家长信息 List<Parent> getAllParent(String studentname);-->
+    <select id="getAllParent" resultType="Parent">
+        select parentid,parentname,studentname,role,sex,phone
+        from parent
+        where studentname = #{studentname}
+    </select>
+
+    <!--获取该生的班级信息 Student leaveStudentOfGrade(String studentname);-->
+    <select id="leaveStudentOfGrade" resultType="Student">
+        select gradename ,studentid
+        from student
+        where studentname = #{studentname}
+    </select>
+
+    <!--获取该老师所在班级信息 List<Teacher> getTeacherOfGradename(String teachername);-->
+    <select id="getTeacherOfGradename" resultType="Teacher">
+        select gradename
+        from teacher
+        where teachername = #{teachername}
+    </select>
+
+    <!--boolean pwdAjax(String pwd);-->
+    <select id="pwdAjax" resultType="UserLogin">
+        select userid
+        from userlogin
+        where pwd = #{pwd} and uname = #{uname}
+    </select>
+
+    <!--boolean changePwd(String uname,String pwd);-->
+    <update id="changePwd" >
+        update userlogin
+        set pwd = #{pwd}
+        where uname = #{uname}
+    </update>
+
+    <!--上传头像addUpload(String name, String file)-->
+    <insert id="addUpload">
+        update userlogin
+        set uploadfile = #{file}
+        where uname = #{uname}
+    </insert>
+
+    <!--getUser(String name)-->
+    <select id="getUser" resultType="UserLogin">
+        select * from userlogin where uname = #{uname}
+    </select>
+
+</mapper>

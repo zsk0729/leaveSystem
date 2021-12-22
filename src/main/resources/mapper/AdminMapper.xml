@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace目前可以自定义要唯一，将来面向接口编程时对应dao接口，
+一 个mapper相当于一个dao接口的实现类 -->
+<mapper namespace="com.jxd.dao.IAdminDao">
+
+    <!--获取所有班级 List<Grade> getAllGrade(String gradename);-->
+    <select id="getAllGrade" resultMap="GradeList1">
+        SELECT g.gradeid gradeid, g.gradename gradename, COUNT(DISTINCT s.studentname) students, COUNT(DISTINCT t.teachername)  teachers
+        FROM ( grade g LEFT JOIN student s ON g.gradename = s.gradename)
+        LEFT JOIN teacher t ON g.gradename = t.gradename GROUP BY gradename;
+    </select>
+    <resultMap id="GradeList1" type="Grade">
+        <id column="gradeid" property="gradeid"></id>
+        <result column="gradename" property="gradename"></result>
+        <result column="students" property="gradeHaveStudent"></result>
+        <result column="teachers" property="gradeHaveTeacher"></result>
+    </resultMap>
+
+    <!--分页查询获取班级列表 List<Grade> getAllGradePage(int pageSize, int pageIndex,String gradename);-->
+    <select id="getAllGradePage" resultMap="GradeList2">
+        SELECT g.gradeid gradeid, g.gradename gradename, COUNT(DISTINCT s.studentname) students, COUNT(DISTINCT t.teachername)  teachers
+        FROM ( grade g LEFT JOIN student s ON g.gradename = s.gradename)
+        LEFT JOIN teacher t ON g.gradename = t.gradename
+        <where>
+            <if test="gradename != null and gradename != ''">
+                g.gradename like '%' #{gradename} '%'
+            </if>
+        </where>
+        GROUP BY gradename
+        order by g.gradeid desc
+        limit #{pageIndex},#{pageSize}
+    </select>
+    <resultMap id="GradeList2" type="Grade">
+        <id column="gradeid" property="gradeid"></id>
+        <result column="gradename" property="gradename"></result>
+        <result column="students" property="gradeHaveStudent"></result>
+        <result column="teachers" property="gradeHaveTeacher"></result>
+    </resultMap>
+
+    <!--获取所有教师  List<Teacher> getAllTeacher(String teachername);-->
+    <select id="getAllTeacher" resultType="Teacher">
+        select teacherid,teachername,sex,birthday,degree,gradename,inschooltime
+        from teacher
+    </select>
+
+    <!--分页查询获取教师列表  List<Teacher> getAllTeacherPage(int pageSize, int pageIndex,String teachername);-->
+    <select id="getAllTeacherPage" resultType="Teacher">
+        select teacherid,teachername,sex,birthday,degree,gradename,inschooltime
+        from teacher
+        <where>
+            <if test="teachername != null and teachername != ''">
+                teachername like '%' #{teachername} '%'
+            </if>
+        </where>
+        order by teacherid desc
+        limit #{pageIndex},#{pageSize}
+    </select>
+
+    <!--获取所有没有分配班级的教师 List<Teacher> getAllTeacherUnallocat();-->
+    <select id="getAllTeacherUnallocat" resultType="Teacher">
+        select teacherid,teachername,sex,birthday,degree
+        from teacher
+        where gradename = "无"
+    </select>
+
+    <!--判断班级名称是否已经存在 List<Grade> gradeNameAjax(String gradename);-->
+    <select id="gradeNameAjax" resultType="Grade">
+        select gradeid
+        from grade
+        where gradename = #{gradename}
+    </select>
+
+    <!--添加班级 boolean addGrade(String gradename);-->
+    <insert id="addGrade">
+        insert into
+        grade(gradename)
+        values(#{gradename})
+    </insert>
+
+    <!--设置老师所属班级 boolean setTeacherOfGrade(String gradename,String teacherid);-->
+    <update id="setTeacherOfGrade" >
+        update teacher
+        set
+        gradename = #{gradename}
+        where teacherid = #{teacherid}
+    </update>
+
+    <!--批量删除班级 boolean delGradeBatch(String[] gradeids);-->
+    <delete id="delGradeBatch">
+        delete from grade
+        where gradeid in
+        <foreach collection="array" item="gradeid" index="index" open="(" close=")" separator=",">
+            #{gradeid}
+        </foreach>
+    </delete>
+
+    <!--删除班级 boolean delGrade(String gradeid);-->
+    <delete id="delGrade">
+        delete from grade where gradeid = #{gradeid}
+    </delete>
+
+    <!--根据班级名称获取该班级教师数量 List<Teacher> getTeacherNumberByGradeid(String gradename);-->
+    <select id="getTeacherNumberByGradename" resultType="Teacher">
+        select teacherid,teachername,sex,birthday,degree
+        from teacher
+        where gradename = #{gradename}
+    </select>
+
+    <!--获取所有学生列表 List<Student> getAllStudent(String gradename,String studentname);-->
+    <select id="getAllStudent" resultType="Student">
+        select studentid,studentname,gradename,birthday,sex,inschooltime
+        from student
+    </select>
+
+    <!--分页查询获取所有学生列表 List<Student> getAllStudentPage(int pageSize, int pageIndex,String gradename,String studentname);-->
+    <select id="getAllStudentPage" resultType="Student">
+        select studentid,studentname,gradename,birthday,sex,inschooltime
+        from student
+        <where>
+            <if test="gradename != null and gradename != ''">
+                gradename like '%' #{gradename} '%'
+            </if>
+            <if test="studentname != null and studentname != ''">
+                and studentname like '%' #{studentname} '%'
+            </if>
+        </where>
+        order by studentid desc
+        limit #{pageIndex},#{pageSize}
+    </select>
+
+    <!--添加学生 boolean addStudent(Student student);-->
+    <insert id="addStudent">
+        insert into
+        student(studentname,birthday,gradename,sex,inschooltime)
+        values(#{studentname},#{birthday},#{gradename},#{sex},#{inschooltime})
+    </insert>
+
+    <!--将新添加的学生添加至用户表 boolean addUserStudent(Student student);-->
+    <insert id="addUserStudent">
+        insert into
+        userlogin(uname,pwd,role)
+        values(#{studentname},'123456','学生')
+    </insert>
+
+    <!--批量删除学生 boolean deleteStudentBatch(String studentids);-->
+    <delete id="deleteStudentBatch">
+        delete from student
+        where studentid in
+        <foreach collection="array" item="studentid" index="index" open="(" close=")" separator=",">
+            #{studentid}
+        </foreach>
+    </delete>
+
+    <!--根据学生编号批量删除家长 boolean deleteParentBatch(String[] studentid);-->
+    <delete id="deleteParentBatch">
+        delete from parent
+        where studentid in
+        <foreach collection="array" item="studentid" index="index" open="(" close=")" separator=",">
+            #{studentid}
+        </foreach>
+    </delete>
+
+    <!--删除学生 boolean deleteStudent(String studentid);-->
+    <delete id="deleteStudent">
+        delete from student where studentid = #{studentid}
+    </delete>
+
+    <!--删除家长 boolean deleteParent(String studentid);-->
+    <delete id="deleteParent">
+        delete from parent where studentid = #{studentid}
+    </delete>
+
+    <!--修改学生信息boolean updateStudent(Student student);-->
+    <update id="updateStudent" >
+        update student
+        set
+        studentname = #{studentname}, sex = #{sex}, birthday = #{birthday},
+        gradename = #{gradename},inschooltime = #{inschooltime}
+        where studentid = #{studentid}
+    </update>
+
+    <!--添加教师 boolean addTeacher(Teacher teacher);-->
+    <insert id="addTeacher">
+        insert into
+        teacher(teachername, sex, birthday, inschooltime,degree,gradename)
+        values(#{teachername},#{sex},#{birthday},#{inschooltime},#{degree},'无')
+    </insert>
+
+    <!--将新添加的教师添加至用户表 boolean addUserTeacher(Teacher teacher);-->
+    <insert id="addUserTeacher">
+        insert into
+        userlogin(uname,pwd, role)
+        values(#{teachername},'123456','教师')
+    </insert>
+
+    <!--批量删除教师 boolean deleteTeacherBatch(String teacherids);-->
+    <delete id="deleteTeacherBatch">
+        delete from teacher
+        where gradename = '无' and teacherid in
+        <foreach collection="array" item="teacherid" index="index" open="(" close=")" separator=",">
+            #{teacherid}
+        </foreach>
+    </delete>
+
+    <!--删除教师 boolean deleteTeacher(String teacherid);-->
+    <delete id="deleteTeacher">
+        delete from teacher where teacherid = #{teacherid} and gradename = '无'
+    </delete>
+
+    <!--编辑教师 boolean updateTeacher(Teacher teacher);-->
+    <update id="updateTeacher" >
+        update teacher
+        set
+        teachername = #{teachername}, sex = #{sex}, birthday = #{birthday},
+        inschooltime = #{inschooltime},degree=#{degree}
+        where teacherid = #{teacherid}
+    </update>
+
+    <!--获取所有用户 List<UserLogin> getAllUser(String uname, String userid);-->
+    <select id="getAllUser" resultType="UserLogin">
+        select userid,uname,role
+        from userlogin
+    </select>
+
+    <!--分页获取所有用户List<UserLogin> getAllUserPage(String uname, String userid,int pageSize, int pageIndex);-->
+    <select id="getAllUserPage" resultType="UserLogin">
+        select userid,uname,role
+        from userlogin
+        <where>
+            <if test="uname != null and uname != ''">
+                uname like '%' #{uname} '%'
+            </if>
+            <if test="userid != null and userid != ''">
+                and userid like '%' #{userid} '%'
+            </if>
+        </where>
+        limit #{pageIndex},#{pageSize}
+    </select>
+
+    <!--重置用户密码 boolean editUser(String userid);-->
+    <update id="editUser" >
+        update userlogin
+        set pwd = 123456
+        where userid = #{userid} and role != "管理员"
+    </update>
+
+    <!--管理员获取每月每个班内请假人数 Admin leaveStudentNumOfMonth(String month, String gradename);-->
+    <select id="leaveStudentNumOfMonth" resultType="Admin">
+        select count(leg.studentname) leaveNumClassMonth
+        from leavemsg leg
+        where starttime like "%" #{month} "%" and state = '同意' and gradename = #{gradename}
+    </select>
+
+    <!--获取班级总人数 Admin getSumStudentClass(String gradename);-->
+    <select id="getSumStudentClass" resultType="Admin">
+        select count (studentname) sumNumStudentOfClass
+        from student
+        where gradename = #{gradename}
+    </select>
+
+    <!--获取学生总数 Admin getSumAllStudent();-->
+    <select id="getSumAllStudent" resultType="Admin">
+        select count (studentname) sumStudent from student;
+    </select>
+
+    <!--获取每个月请假的总人数 Admin getSumLeaveMonth(String month);-->
+    <select id="getSumLeaveMonth" resultType="Admin">
+        select count(leg.studentname) leaveSumMonth
+        from leavemsg leg
+        where starttime like "%" #{month} "%" and state = '同意'
+    </select>
+
+    <!--根据班级编号获取班级名称 Grade getGradenameByGradeid(String gradeid);-->
+    <select id="getGradenameByGradeid" resultType="Grade">
+        select gradename
+        from grade
+        where gradeid = #{gradeid};
+    </select>
+
+
+</mapper>

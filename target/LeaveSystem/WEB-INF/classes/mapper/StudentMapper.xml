@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace目前可以自定义要唯一，将来面向接口编程时对应dao接口，
+一 个mapper相当于一个dao接口的实现类 -->
+<mapper namespace="com.jxd.dao.IStudentDao">
+
+    <!--得到学生个人所有请假信息 List<LeaveMsg> studentGetPersonalAllLeaveMsg(String studentname,String starttime,String endtime);-->
+    <select id="studentGetPersonalAllLeaveMsg" resultType="LeaveMsg">
+        select leaveid,starttime,endtime,parentname,teachername,state,reason
+        from leaveMsg
+        where studentname = #{studentname}
+    </select>
+
+    <!--分页获取学生个人所有请假信息 List<LeaveMsg> studentGetPersonalAllLeaveMsgPage(String studentname,String starttime,String endtime,int pageSize, int pageIndex);-->
+    <select id="studentGetPersonalAllLeaveMsgPage" resultType="LeaveMsg">
+        select leaveid,starttime,endtime,parentname,teachername,state,reason
+        from leaveMsg
+        <where>
+            <if test="studentname != null and studentname != ''">
+                studentname = #{studentname}
+            </if>
+            <if test="starttime != null and starttime != ''">
+                and starttime like '%' #{starttime} '%'
+            </if>
+            <if test="endtime != null and endtime != ''">
+                and endtime like '%' #{endtime} '%'
+            </if>
+        </where>
+        limit #{pageIndex},#{pageSize}
+    </select>
+
+    <!--批量删除学生个人请假信息 boolean deletePersonalLeaveMsgBatch(String[] leaveids);-->
+    <update id="deletePersonalLeaveMsgBatch" >
+        update leaveMsg
+        set
+        studentdel = -1
+        where leaveid in
+        <foreach collection="array" item="leaveid" index="index" open="(" close=")" separator=",">
+            #{leaveid}
+        </foreach>
+    </update>
+
+    <!--删除单条学生个人请假信息 boolean deletePersonalLeaveMsg(String leaveid);-->
+    <update id="deletePersonalLeaveMsg">
+        update leaveMsg
+        set studentdel = -1
+        where leaveid = #{leaveid}
+    </update>
+
+    <!--查看详细请假信息 List<LeaveMsg> viewLeaveMsg(String leaveid);-->
+    <select id="viewLeaveMsg" resultType="LeaveMsg">
+        select leaveid,starttime,endtime,studentname,gradename,parentname,teachername,state,reason
+        from leaveMsg
+        where leaveid = #{leaveid}
+    </select>
+
+    <!--学生添加申请请假 boolean addLeave(LeaveMsg leaveMsg);-->
+    <insert id="addLeave">
+        insert into
+        leaveMsg(starttime,endtime,studentname,gradename,parentname,reason,state,teachername)
+        values(#{starttime},#{endtime},#{studentname},#{gradename},#{parentname},#{reason},'等待批准','正在等待')
+    </insert>
+
+    <!--获取该生等待批准的请假信息列表 List<LeaveMsg> studentGetPersonalWaitAgreeLeaveMsg(String studentname,String starttime,String endtime);-->
+    <select id="studentGetPersonalWaitAgreeLeaveMsg" resultType="LeaveMsg">
+        select leaveid,starttime,endtime,parentname,state,reason
+        from leaveMsg
+        where studentname = #{studentname} and state = '等待批准'
+    </select>
+
+    <!--分页获取该生等待批准的请假信息列表 List<LeaveMsg> studentGetPersonalWaitAgreeLeaveMsgPage(String studentname,String starttime,String endtime,int pageSize, int pageIndex);-->
+    <select id="studentGetPersonalWaitAgreeLeaveMsgPage" resultType="LeaveMsg">
+        select leaveid,starttime,endtime,parentname,state,reason
+        from leaveMsg
+        <where>
+            <if test="studentname != null and studentname != ''">
+                studentname = #{studentname} and state = '等待批准'
+            </if>
+            <if test="starttime != null and starttime != ''">
+                and starttime like '%' #{starttime} '%'
+            </if>
+            <if test="endtime != null and endtime != ''">
+                and endtime like '%' #{endtime} '%'
+            </if>
+        </where>
+        limit #{pageIndex},#{pageSize}
+    </select>
+
+    <!--批量取消请假 boolean cancelLeaveMsgBatch(String[] leaveid);-->
+    <delete id="cancelLeaveMsgBatch">
+        delete from leaveMsg
+        where leaveid in
+        <foreach collection="array" item="leaveid" index="index" open="(" close=")" separator=",">
+            #{leaveid}
+        </foreach>
+    </delete>
+
+    <!--取消请假 boolean cancelLeaveMsg(String leaveid);-->
+    <delete id="cancelLeaveMsg">
+        delete from leaveMsg
+        where leaveid = #{leaveid}
+    </delete>
+
+    <!--得到该生所有已经同意的请假申请 List<LeaveMsg> studentGetPersonalAlreadyAgreeLeaveMsg(String studentname,String starttime,String endtime);-->
+    <select id="studentGetPersonalAlreadyAgreeLeaveMsg" resultType="LeaveMsg">
+        select leaveid,starttime,endtime,parentname,teachername,state,reason
+        from leaveMsg
+        where studentname = #{studentname} and state = '同意'
+    </select>
+
+    <!--分页获取该生所有已经同意的请假申请 List<LeaveMsg> studentGetPersonalAlreadyAgreeLeaveMsgPage(String studentname,String starttime,String endtime,int pageSize, int pageIndex);-->
+    <select id="studentGetPersonalAlreadyAgreeLeaveMsgPage" resultType="LeaveMsg">
+        select leaveid,starttime,endtime,parentname,teachername,state,reason
+        from leaveMsg
+        <where>
+            <if test="studentname != null and studentname != ''">
+                studentname = #{studentname} and state = '同意'
+            </if>
+            <if test="starttime != null and starttime != ''">
+                and starttime like '%' #{starttime} '%'
+            </if>
+            <if test="endtime != null and endtime != ''">
+                and endtime like '%' #{endtime} '%'
+            </if>
+        </where>
+        limit #{pageIndex},#{pageSize}
+    </select>
+
+    <!--得到该生所有被拒绝的请假申请 -->
+    <select id="studentGetPersonalRefuseLeaveMsg" resultType="LeaveMsg">
+        select leaveid,starttime,endtime,parentname,teachername,state,reason
+        from leaveMsg
+        where studentname = #{studentname} and state = '拒绝'
+    </select>
+
+    <!--分页获取该生所有被拒绝的请假申请 -->
+    <select id="studentGetPersonalRefuseLeaveMsgPage" resultType="LeaveMsg">
+        select leaveid,starttime,endtime,parentname,teachername,state,reason
+        from leaveMsg
+        <where>
+            <if test="studentname != null and studentname != ''">
+                studentname = #{studentname} and state = '拒绝'
+            </if>
+            <if test="starttime != null and starttime != ''">
+                and starttime like '%' #{starttime} '%'
+            </if>
+            <if test="endtime != null and endtime != ''">
+                and endtime like '%' #{endtime} '%'
+            </if>
+        </where>
+        limit #{pageIndex},#{pageSize}
+    </select>
+
+    <!--获取家长列表 List<Parent> studentParentMsg(String studentname);-->
+    <select id="studentParentMsg" resultType="Parent">
+        select parentid,studentname,parentname,sex,role,phone
+        from parent
+        where studentname = #{studentname}
+    </select>
+
+    <!--添加家长信息 boolean addParent(Parent parent);-->
+    <insert id="addParent">
+        insert into
+        parent(studentname,parentname,sex,role,phone)
+        values(#{studentname},#{parentname},#{sex},#{role},#{phone})
+    </insert>
+
+    <!--删除家长信息 boolean deleteParent(String parentid);-->
+    <delete id="deleteParent">
+        delete from parent
+        where parentid = #{parentid}
+    </delete>
+
+
+</mapper>
+
